@@ -40,15 +40,23 @@ If still empty, stop and ask the user. Do not proceed without a confirmed key.
 
 ---
 
-## CRITICAL: curl only, never MCP
+## CRITICAL: curl for Linear, gh CLI for GitHub — never MCP for either
+
+**Linear:** use `curl` with `$LINEAR_API_KEY`. **GitHub:** use `gh` CLI with `$GH_TOKEN`. Never use MCP tools for either.
+
+```bash
+# gh uses GH_TOKEN automatically — no login needed in remote environments
+export GH_TOKEN=$GH_TOKEN
+```
 
 | Rationalization | Reality |
 |----------------|---------|
 | "MCP is easier" | The user explicitly requires API key auth. |
-| "MCP handles errors better" | curl returns the same JSON. Check the `errors` field. |
-| "MCP tools are already configured" | Does not matter. Use curl. |
+| "MCP handles errors better" | curl / gh return the same data. Check the response. |
+| "MCP tools are already configured" | Does not matter. Use curl / gh. |
+| "gh isn't available" | Set `GH_TOKEN` and `gh` will work. If `gh` isn't installed, stop and report — do not attempt MCP. |
 
-If you are about to call any `mcp__claude_ai_Linear__*` tool: stop. Use curl instead.
+If you are about to call any `mcp__claude_ai_Linear__*` or GitHub MCP tool: stop. Use curl / gh instead.
 
 ---
 

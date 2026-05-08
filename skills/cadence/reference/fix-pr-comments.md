@@ -11,6 +11,26 @@ For each open PR that has unresolved review comments or a `CHANGES_REQUESTED` ve
 
 ---
 
+## CRITICAL: gh CLI only, never GitHub MCP
+
+All GitHub operations use `gh` CLI with `$GH_TOKEN`. Never use GitHub MCP tools.
+
+```bash
+# gh uses GH_TOKEN automatically — no login needed in remote environments
+export GH_TOKEN=$GH_TOKEN
+```
+
+| Rationalization | Reality |
+|----------------|---------|
+| "GitHub MCP is already configured" | Does not matter. Use `gh`. |
+| "MCP is easier than gh CLI" | `gh` returns the same data. |
+| "Let me try MCP and fall back to gh" | No. Start with `gh`. There is no fallback. |
+| "gh isn't available" | Set `GH_TOKEN` and `gh` will work. If `gh` isn't installed, stop and report — do not attempt MCP. |
+
+If you are about to call any GitHub MCP tool: stop. Use `gh` instead.
+
+---
+
 ## Pre-flight: Clean Working Tree
 
 ```bash
