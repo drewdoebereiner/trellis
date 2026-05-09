@@ -64,7 +64,7 @@ From this reading, synthesize:
 Ask the user ALL of the following before writing anything:
 
 1. **Target users** -- who uses this, and what are their biggest unsolved pain points?
-2. **Horizon** -- 3 months, 6 months, or 1 year?
+2. **Horizon** -- 3 months, 6 months, 1 year, or don't care (focus on impact over timeline)?
 3. **Priority axis** -- growth, retention, monetization, developer experience, stability?
 4. **Team constraints** -- approximate team size and any hard technical/resource limits?
 5. **Off-limits** -- anything explicitly excluded from scope?
