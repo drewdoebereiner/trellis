@@ -1,11 +1,11 @@
 ---
-name: cadence
-description: "Agentic SDLC automation for the full development lifecycle: roadmap vision, backlog research, autonomous implementation, unit test generation, PR review, and PR comment resolution. Invoke as /cadence <sub-command>. Sub-commands: vision-roadmap, research-backlog, dev-backlog, write-unit-tests, fix-pr-comments, bulk-pr-review."
+name: trellis
+description: "Agentic SDLC automation for the full development lifecycle: roadmap vision, backlog research, autonomous implementation, unit test generation, PR review, and PR comment resolution. Invoke as /trellis <sub-command>. Sub-commands: vision-roadmap, research-backlog, dev-backlog, write-unit-tests, fix-pr-comments, bulk-pr-review."
 ---
 
-# Cadence
+# Trellis
 
-Cadence automates the full software development lifecycle with six composable sub-commands. Invoke any sub-command as `/cadence <sub-command>`.
+Trellis automates the full software development lifecycle with six composable sub-commands. Invoke any sub-command as `/trellis <sub-command>`.
 
 ## Sub-commands
 
@@ -20,7 +20,7 @@ Cadence automates the full software development lifecycle with six composable su
 
 ## Routing
 
-When invoked as `/cadence <sub-command>`, load and execute the matching reference file:
+When invoked as `/trellis <sub-command>`, load and execute the matching reference file:
 
 - `vision-roadmap` -> `reference/vision-roadmap.md`
 - `research-backlog` -> `reference/research-backlog.md`
@@ -29,4 +29,4 @@ When invoked as `/cadence <sub-command>`, load and execute the matching referenc
 - `fix-pr-comments` -> `reference/fix-pr-comments.md`
 - `bulk-pr-review` -> `reference/bulk-pr-review.md`
 
-If invoked as `/cadence` with no sub-command, list the table above and ask the user which sub-command to run.
+If invoked as `/trellis` with no sub-command, list the table above and ask the user which sub-command to run.

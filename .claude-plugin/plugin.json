@@ -1,9 +1,9 @@
 {
-  "name": "cadence",
+  "name": "trellis",
   "description": "Agentic SDLC automation: roadmap vision, backlog research, autonomous implementation, unit test generation, PR review, and PR comment resolution.",
   "version": "1.0.0",
   "author": "drewdoebereiner",
-  "homepage": "https://github.com/drewdoebereiner/cadence",
-  "repository": "https://github.com/drewdoebereiner/cadence",
+  "homepage": "https://github.com/drewdoebereiner/trellis",
+  "repository": "https://github.com/drewdoebereiner/trellis",
   "skills": "./skills"
 }
