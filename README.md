@@ -105,7 +105,7 @@ One skill, six sub-commands. Invoke as `/trellis <sub-command>`.
 |---|---|
 | `vision-roadmap` | Read the repo, ask 7 clarifying questions, produce a strategic roadmap doc, create Linear backlog tickets via GraphQL |
 | `research-backlog` | Fetch all backlog tickets, dispatch parallel research agents, post structured findings as comments |
-| `dev-backlog` | Pull up to 5 Todo tickets by priority, implement each on its own branch, open PRs targeting dev, move tickets to In Review |
+| `dev-backlog` | Pull Todo tickets by priority (default 10, or specify a count), implement each on its own branch, open PRs targeting dev, move tickets to In Review |
 | `write-unit-tests` | Discover test framework from codebase, identify coverage gaps from git diff, write pattern-matched tests |
 | `bulk-pr-review` | Map PR dependency layers, dispatch parallel review subagents per layer, post APPROVE / REQUEST CHANGES / BLOCKED-CI verdicts to GitHub |
 | `fix-pr-comments` | Find all open PRs with CHANGES_REQUESTED or unresolved threads, fix every issue, push, reply to threads with commit SHA |

@@ -7,7 +7,7 @@ description: "Use when asked to work the dev backlog, implement Linear tickets, 
 
 ## Overview
 
-For each Todo ticket in your Linear team, implement the code changes, open a PR targeting dev, and move the ticket to In Review. Maximum 5 tickets per run. Stop cleanly if blockers are hit.
+For each Todo ticket in your Linear team, implement the code changes, open a PR targeting dev, and move the ticket to In Review. Default maximum is 10 tickets per run; the user may specify a different limit. Stop cleanly if blockers are hit.
 
 **Always uses `$LINEAR_API_KEY` via curl. Never uses MCP Linear tools.**
 
@@ -23,6 +23,15 @@ export PROJECT_ROOT=/path/to/your/repo
 
 # Your Linear team name (used to look up the team ID)
 export LINEAR_TEAM_NAME="your-team-name"
+```
+
+### Ticket limit
+
+If the user invoked `/trellis dev-backlog <n>`, use that number. Otherwise default to 10.
+
+```bash
+# Set from invocation argument, or default to 10
+TICKET_LIMIT=${1:-10}
 ```
 
 ---
@@ -108,18 +117,18 @@ Save the `id` as `TEAM_ID`.
 
 ---
 
-## Step 3: Fetch Todo Tickets (up to 5)
+## Step 3: Fetch Todo Tickets (up to `$TICKET_LIMIT`)
 
-Fetch unstarted issues ordered by priority. Cap at 5.
+Fetch unstarted issues ordered by priority. Cap at `$TICKET_LIMIT`.
 
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $LINEAR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "query TodoIssues($teamId: String!) { issues(filter: { team: { id: { eq: $teamId } }, state: { type: { eq: \"unstarted\" } } }, first: 5, orderBy: priority) { nodes { id identifier title description url priority labels { nodes { name } } } } }",
-    "variables": { "teamId": "TEAM_ID" }
-  }' | jq '.data.issues.nodes'
+  -d "{
+    \"query\": \"query TodoIssues(\$teamId: String!) { issues(filter: { team: { id: { eq: \$teamId } }, state: { type: { eq: \\\"unstarted\\\" } } }, first: $TICKET_LIMIT, orderBy: priority) { nodes { id identifier title description url priority labels { nodes { name } } } } }\",
+    \"variables\": { \"teamId\": \"TEAM_ID\" }
+  }" | jq '.data.issues.nodes'
 ```
 
 If 0 issues returned, confirm state names by querying workflow states:
@@ -304,7 +313,7 @@ After all tickets are processed (or run is stopped), print a summary table:
 
 ## Run Limits and Stopping Rules
 
-- **Maximum 5 tickets per run.** Stop after 5 even if more remain.
+- **Maximum `$TICKET_LIMIT` tickets per run** (default 10, or whatever the user specified). Stop once the limit is reached even if more remain.
 - Stop early if:
   - Repo sync fails (dirty tree or diverged branch)
   - A ticket's scope is unclear and cannot be resolved by reading docs
@@ -324,7 +333,7 @@ After all tickets are processed (or run is stopped), print a summary table:
 | Pushing to a personal fork | Push to the org upstream only. Check `git remote -v`. |
 | Using the Linear `branchName` field | Derive slug from ticket title. |
 | Opening PR against main | `--base dev` always. |
-| Starting ticket 6 | Hard stop at 5. |
+| Exceeding the ticket limit | Hard stop at `$TICKET_LIMIT`. |
 | Merging the PR | Never merge. Open and leave for review. |
 | Using `git add -A` | Add specific files only. Avoid accidentally staging secrets. |
 | Skipping tests | Run tests for every ticket. No exceptions. |

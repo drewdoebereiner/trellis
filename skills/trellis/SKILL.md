@@ -13,7 +13,7 @@ Trellis automates the full software development lifecycle with six composable su
 |---|---|
 | `vision-roadmap` | Read the repo, ask clarifying questions, produce a strategic roadmap doc, create Linear backlog tickets |
 | `research-backlog` | Enrich each Linear backlog ticket with parallel research comments before implementation |
-| `dev-backlog` | Fetch up to 5 Todo tickets, implement each on its own branch, open PRs targeting dev, move to In Review |
+| `dev-backlog` | Fetch Todo tickets (default 10, or `/trellis dev-backlog <n>` for a custom count), implement each on its own branch, open PRs targeting dev, move to In Review |
 | `write-unit-tests` | Discover test framework from codebase, write pattern-matched tests for staged changes |
 | `fix-pr-comments` | Find all open PRs with CHANGES_REQUESTED or unresolved comments, fix every issue, reply to threads |
 | `bulk-pr-review` | Map PR dependency layers, dispatch parallel review subagents per layer, post verdicts to GitHub |
