@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trellis — Production SDLC on a Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:        oklch(97.5% 0.008 85);
+      --cream-2:      oklch(94.5% 0.013 85);
+      --ink:          oklch(16%   0.015 85);
+      --ink-2:        oklch(44%   0.018 85);
+      --ink-3:        oklch(64%   0.014 85);
+      --moss:         oklch(33%   0.085 148);
+      --moss-mid:     oklch(52%   0.075 148);
+      --moss-pale:    oklch(93%   0.022 148);
+      --rule:         oklch(87%   0.014 85);
+      --rule-strong:  oklch(76%   0.020 85);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      background: var(--cream);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ─────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1.5rem, 6vw, 5rem);
+      height: 60px;
+      background: oklch(97.5% 0.008 85 / 0);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    nav.scrolled {
+      background: oklch(97.5% 0.008 85 / 0.94);
+      border-bottom-color: var(--rule);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--cream);
+      transition: color 0.4s;
+    }
+
+    nav.scrolled .nav-logo { color: var(--ink); }
+
+    .nav-logo svg { color: var(--moss); flex-shrink: 0; }
+
+    .nav-wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(1.5rem, 3vw, 2.5rem);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.8rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: oklch(97.5% 0.008 85 / 0.7);
+      transition: color 0.3s;
+    }
+
+    nav.scrolled .nav-links a { color: var(--ink-2); }
+    nav.scrolled .nav-links a:hover { color: var(--ink); }
+    .nav-links a:hover { color: oklch(97.5% 0.008 85); }
+
+    .nav-gh {
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.45rem 1.1rem;
+      border: 1px solid oklch(97.5% 0.008 85 / 0.4);
+      color: oklch(97.5% 0.008 85 / 0.8);
+      transition: border-color 0.3s, color 0.3s, background 0.3s;
+    }
+
+    nav.scrolled .nav-gh {
+      border-color: var(--moss);
+      color: var(--moss);
+    }
+
+    nav.scrolled .nav-gh:hover {
+      background: var(--moss);
+      color: var(--cream);
+    }
+
+    /* ── HERO ────────────────────────────────────── */
+    #hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--ink);
+    }
+
+    #hero video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-scroll-cue {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.625rem;
+      color: oklch(97% 0.008 85 / 0.55);
+    }
+
+    .hero-scroll-label {
+      font-size: 0.625rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+
+    .hero-scroll-line {
+      width: 1px;
+      height: 44px;
+      background: linear-gradient(to bottom, oklch(97% 0.008 85 / 0.55), transparent);
+      animation: linePulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes linePulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* ── MANIFESTO ───────────────────────────────── */
+    #manifesto {
+      padding: clamp(5rem, 11vw, 11rem) clamp(1.5rem, 8vw, 9rem);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .manifesto-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(2.25rem, 5.5vw, 4.75rem);
+      line-height: 1.22;
+      color: var(--ink);
+      max-width: 20ch;
+      margin-bottom: clamp(3.5rem, 7vw, 6.5rem);
+    }
+
+    .manifesto-pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--rule);
+    }
+
+    .pillar {
+      padding: 2.25rem 2.5rem 2.25rem 0;
+      border-right: 1px solid var(--rule);
+    }
+
+    .pillar:nth-child(2) {
+      padding-left: 2.5rem;
+    }
+
+    .pillar:last-child {
+      padding-left: 2.5rem;
+      padding-right: 0;
+      border-right: none;
+    }
+
+    .pillar-label {
+      font-size: 0.675rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--moss);
+      font-weight: 500;
+      margin-bottom: 0.875rem;
+    }
+
+    .pillar-text {
+      font-size: 0.9375rem;
+      line-height: 1.75;
+      color: var(--ink-2);
+    }
+
+    /* ── SHARED ──────────────────────────────────── */
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.875rem;
+      font-size: 0.675rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--moss);
+      font-weight: 500;
+      margin-bottom: 3rem;
+    }
+
+    .section-tag::after {
+      content: '';
+      display: block;
+      width: 64px;
+      height: 1px;
+      background: var(--rule-strong);
+    }
+
+    /* ── FRAMEWORK ───────────────────────────────── */
+    #framework {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .framework-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 7vw, 9rem);
+      align-items: start;
+    }
+
+    .framework-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2.5rem, 5vw, 4.25rem);
+      line-height: 1.1;
+    }
+
+    .framework-heading em {
+      font-style: italic;
+      color: var(--moss);
+    }
+
+    .framework-right p {
+      font-size: 0.9375rem;
+      line-height: 1.82;
+      color: var(--ink-2);
+      margin-bottom: 1.25rem;
+    }
+
+    .framework-right p:last-child { margin-bottom: 0; }
+
+    .framework-facts {
+      margin-top: 2.75rem;
+      padding-top: 2.75rem;
+      border-top: 1px solid var(--rule);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.75rem 3rem;
+    }
+
+    .fact-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 2.25rem;
+      line-height: 1;
+      color: var(--ink);
+      margin-bottom: 0.3rem;
+    }
+
+    .fact-label {
+      font-size: 0.8125rem;
+      color: var(--ink-3);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── PIPELINE ────────────────────────────────── */
+    #pipeline {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      background: var(--cream-2);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .pipeline-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 7vw, 9rem);
+      align-items: end;
+      margin-bottom: clamp(3.5rem, 7vw, 5rem);
+    }
+
+    .pipeline-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.15;
+    }
+
+    .pipeline-intro {
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--ink-2);
+    }
+
+    .pipeline-list { display: flex; flex-direction: column; }
+
+    .pipeline-item {
+      display: grid;
+      grid-template-columns: 2.75rem 1fr auto;
+      gap: 1.75rem 2.5rem;
+      align-items: start;
+      padding: 2rem 0;
+      border-top: 1px solid var(--rule);
+    }
+
+    .pipeline-item:last-child { border-bottom: 1px solid var(--rule); }
+
+    .p-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 1.15rem;
+      color: var(--ink-3);
+      padding-top: 0.1rem;
+    }
+
+    .p-cmd {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8125rem;
+      color: var(--moss);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.01em;
+    }
+
+    .p-title {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.375rem;
+    }
+
+    .p-desc {
+      font-size: 0.875rem;
+      line-height: 1.68;
+      color: var(--ink-2);
+    }
+
+    .p-env {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      padding-top: 0.25rem;
+      align-items: flex-end;
+    }
+
+    .env-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--ink-3);
+      border: 1px solid var(--rule-strong);
+      padding: 0.2rem 0.5rem;
+      background: var(--cream);
+      white-space: nowrap;
+    }
+
+    /* ── SCHEDULING ──────────────────────────────── */
+    #scheduling {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .scheduling-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 7vw, 9rem);
+      align-items: start;
+    }
+
+    .scheduling-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.15;
+      margin-bottom: 2rem;
+    }
+
+    .scheduling-body p {
+      font-size: 0.9375rem;
+      line-height: 1.82;
+      color: var(--ink-2);
+      margin-bottom: 1.125rem;
+    }
+
+    .scheduling-body p:last-child { margin-bottom: 0; }
+
+    .cron-block {
+      background: var(--ink);
+      padding: 2.25rem 2.75rem;
+    }
+
+    .cron-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--moss-mid);
+      margin-bottom: 1.75rem;
+      font-weight: 500;
+    }
+
+    .cron-row {
+      display: grid;
+      grid-template-columns: 15ch 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+    }
+
+    .cron-row:last-child { margin-bottom: 0; }
+
+    .cron-sched { color: oklch(72% 0.04 85); }
+    .cron-cmd   { color: oklch(91% 0.03 148); }
+
+    /* ── WHY ─────────────────────────────────────── */
+    #why {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      background: var(--cream-2);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .why-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.15;
+      margin-bottom: clamp(3rem, 6vw, 5rem);
+      max-width: 20ch;
+    }
+
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      border-top: 1px solid var(--rule-strong);
+      border-left: 1px solid var(--rule-strong);
+    }
+
+    .why-cell {
+      padding: 2.5rem;
+      border-right: 1px solid var(--rule-strong);
+      border-bottom: 1px solid var(--rule-strong);
+    }
+
+    .why-cell-num {
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--moss);
+      font-weight: 500;
+      margin-bottom: 1.125rem;
+    }
+
+    .why-cell h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      font-size: 1.375rem;
+      line-height: 1.3;
+      color: var(--ink);
+      margin-bottom: 0.75rem;
+    }
+
+    .why-cell p {
+      font-size: 0.9rem;
+      line-height: 1.78;
+      color: var(--ink-2);
+    }
+
+    /* ── COMPATIBILITY ───────────────────────────── */
+    #compatibility {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .compat-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: clamp(3rem, 7vw, 9rem);
+      align-items: start;
+    }
+
+    .compat-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      line-height: 1.15;
+    }
+
+    .compat-intro {
+      font-size: 0.9375rem;
+      line-height: 1.82;
+      color: var(--ink-2);
+      margin-bottom: 2.25rem;
+    }
+
+    .harness-list { display: flex; flex-direction: column; }
+
+    .harness-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .harness-row:first-child { border-top: 1px solid var(--rule); }
+
+    .harness-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--moss);
+      flex-shrink: 0;
+    }
+
+    .harness-name {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ink);
+      flex: 1;
+    }
+
+    .harness-path {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.775rem;
+      color: var(--ink-3);
+    }
+
+    .sp-callout {
+      margin-top: 2.5rem;
+      background: var(--cream-2);
+      border: 1px solid var(--rule-strong);
+      padding: 2rem 2.25rem;
+    }
+
+    .sp-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--moss);
+      font-weight: 500;
+      margin-bottom: 0.875rem;
+    }
+
+    .sp-callout h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.45rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.625rem;
+    }
+
+    .sp-callout p {
+      font-size: 0.875rem;
+      line-height: 1.78;
+      color: var(--ink-2);
+      margin-bottom: 1.25rem;
+    }
+
+    .sp-link {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--moss);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .sp-link::after { content: ' →'; }
+
+    /* ── INSTALL ─────────────────────────────────── */
+    #install {
+      padding: clamp(5rem, 10vw, 10rem) clamp(1.5rem, 8vw, 9rem);
+      background: var(--cream-2);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .install-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 7vw, 9rem);
+      align-items: start;
+    }
+
+    .install-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.15;
+      margin-bottom: 3rem;
+    }
+
+    .install-steps { display: flex; flex-direction: column; gap: 2rem; }
+
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 1.5rem;
+      color: var(--moss);
+      flex-shrink: 0;
+      line-height: 1.2;
+      width: 1.5rem;
+    }
+
+    .step h4 {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.35rem;
+    }
+
+    .step p {
+      font-size: 0.875rem;
+      line-height: 1.72;
+      color: var(--ink-2);
+    }
+
+    .code-panels { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .code-panel { background: var(--ink); padding: 1.75rem 2.25rem; }
+
+    .code-panel-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: oklch(64% 0.014 85);
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+    }
+
+    .code-panel code {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8125rem;
+      line-height: 1.9;
+      color: oklch(90% 0.012 85);
+      display: block;
+    }
+
+    .code-panel .sh-prompt { color: var(--moss-mid); user-select: none; }
+    .code-panel .sh-cmd    { color: oklch(91% 0.03 148); }
+
+    /* ── FOOTER ──────────────────────────────────── */
+    footer {
+      padding: 2.75rem clamp(1.5rem, 8vw, 9rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.8rem;
+      color: var(--ink-3);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--ink); }
+
+    .footer-copy {
+      font-size: 0.8rem;
+      color: var(--ink-3);
+      letter-spacing: 0.03em;
+    }
+
+    /* ── REVEAL ANIMATIONS ───────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition:
+        opacity  0.72s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.in { opacity: 1; transform: none; }
+    .d1 { transition-delay: 0.1s; }
+    .d2 { transition-delay: 0.2s; }
+    .d3 { transition-delay: 0.3s; }
+    .d4 { transition-delay: 0.4s; }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 860px) {
+      .manifesto-pillars { grid-template-columns: 1fr; }
+      .pillar { border-right: none; border-bottom: 1px solid var(--rule); padding: 2rem 0; }
+      .pillar:nth-child(2) { padding-left: 0; }
+      .pillar:last-child { padding-left: 0; }
+
+      .framework-layout,
+      .pipeline-header,
+      .scheduling-layout,
+      .compat-layout,
+      .install-layout { grid-template-columns: 1fr; }
+
+      .pipeline-item { grid-template-columns: 2.75rem 1fr; }
+      .p-env { grid-column: 2; flex-direction: row; align-items: flex-start; flex-wrap: wrap; }
+
+      .why-grid { grid-template-columns: 1fr; }
+
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────── -->
+<nav id="nav">
+  <a href="/" class="nav-logo">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <line x1="3"  y1="0" x2="3"  y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="9"  y1="0" x2="9"  y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="15" y1="0" x2="15" y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="3"  x2="18" y2="3"  stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="9"  x2="18" y2="9"  stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="15" x2="18" y2="15" stroke="currentColor" stroke-width="1.1"/>
+    </svg>
+    <span class="nav-wordmark">Trellis</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#framework">Framework</a></li>
+    <li><a href="#pipeline">Commands</a></li>
+    <li><a href="#scheduling">Scheduling</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="https://github.com/drewdoebereiner/trellis" class="nav-gh">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- ── HERO ────────────────────────────────── -->
+<section id="hero">
+  <video autoplay muted loop playsinline>
+    <source src="mp_.mp4" type="video/mp4">
+  </video>
+  <div class="hero-scroll-cue">
+    <span class="hero-scroll-label">Scroll</span>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── MANIFESTO ────────────────────────────── -->
+<section id="manifesto">
+  <blockquote class="manifesto-quote reveal">
+    A trellis doesn't control the plant — it gives it structure to grow along.
+  </blockquote>
+  <div class="manifesto-pillars">
+    <div class="pillar reveal d1">
+      <p class="pillar-label">Structure</p>
+      <p class="pillar-text">The framework defines skills and shape. Agents traverse a lattice of composable capabilities — not a rigid script, but a path of least resistance through your codebase.</p>
+    </div>
+    <div class="pillar reveal d2">
+      <p class="pillar-label">Autonomy</p>
+      <p class="pillar-text">Six sub-commands cover the full SDLC loop — from roadmap to merged PR — with no manual handoffs between stages. Wire it to cron once and step away.</p>
+    </div>
+    <div class="pillar reveal d3">
+      <p class="pillar-label">Scale</p>
+      <p class="pillar-text">Most agent tooling handles one feature at a time. Trellis processes your entire backlog, PR queue, and test coverage gaps in a single automated pass, every night.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FRAMEWORK ────────────────────────────── -->
+<section id="framework">
+  <div class="section-tag reveal">01 / Framework</div>
+  <div class="framework-layout">
+    <div class="reveal">
+      <h2 class="framework-heading">
+        Production SDLC,<br><em>on a schedule.</em>
+      </h2>
+      <div class="framework-facts">
+        <div>
+          <div class="fact-value">6</div>
+          <div class="fact-label">Sub-commands</div>
+        </div>
+        <div>
+          <div class="fact-value">0</div>
+          <div class="fact-label">Manual handoffs</div>
+        </div>
+        <div>
+          <div class="fact-value">5</div>
+          <div class="fact-label">Harnesses supported</div>
+        </div>
+        <div>
+          <div class="fact-value">∞</div>
+          <div class="fact-label">Tickets processable</div>
+        </div>
+      </div>
+    </div>
+    <div class="framework-right reveal d1">
+      <p>Trellis is a bulk execution framework for shipping large-scale software production on a schedule — automatically, without babysitting.</p>
+      <p>It runs as a skill inside your agent harness. One install, six commands. Each sub-command is stateless and idempotent — running one twice produces no duplicate work, making the entire pipeline safe to wire into cron.</p>
+      <p>Pair it with Superpowers — which encodes best practices into how the agent codes — and you get an agent that not only ships fast, but ships correctly. Research before implementation. Tests before review. Comments resolved before merge. The full SDLC, unattended.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── PIPELINE ──────────────────────────────── -->
+<section id="pipeline">
+  <div class="section-tag reveal">02 / Commands</div>
+  <div class="pipeline-header">
+    <h2 class="pipeline-heading reveal">Six commands.<br>The complete loop.</h2>
+    <p class="pipeline-intro reveal d1">Each sub-command maps to a stage of the software development lifecycle. Run them in sequence for a full automated sprint — or drop one in wherever you need it. All invoked as&nbsp;<code style="font-family:'DM Mono',monospace;font-size:0.875em">/trellis&nbsp;&lt;sub-command&gt;</code>.</p>
+  </div>
+  <div class="pipeline-list">
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">01</div>
+      <div>
+        <div class="p-cmd">/trellis vision-roadmap</div>
+        <div class="p-title">Roadmap &amp; Backlog Generation</div>
+        <div class="p-desc">Reads the repo, asks 7 clarifying questions, produces a strategic roadmap document, and creates Linear backlog tickets via GraphQL. The starting point for any new sprint.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag">LINEAR_API_KEY</span>
+      </div>
+    </div>
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">02</div>
+      <div>
+        <div class="p-cmd">/trellis research-backlog</div>
+        <div class="p-title">Parallel Ticket Research</div>
+        <div class="p-desc">Fetches all backlog tickets, dispatches parallel research agents, and posts structured findings as comments. Skips tickets it has already commented on — safe to run daily.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag">LINEAR_API_KEY</span>
+      </div>
+    </div>
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">03</div>
+      <div>
+        <div class="p-cmd">/trellis dev-backlog</div>
+        <div class="p-title">Bulk Implementation</div>
+        <div class="p-desc">Pulls unstarted tickets by priority (default 10, configurable), implements each on its own branch, opens PRs targeting dev, and moves tickets to In Review automatically.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag">LINEAR_API_KEY</span>
+        <span class="env-tag">GH_TOKEN</span>
+      </div>
+    </div>
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">04</div>
+      <div>
+        <div class="p-cmd">/trellis write-unit-tests</div>
+        <div class="p-title">Coverage from Diff</div>
+        <div class="p-desc">Discovers the test framework from the codebase, identifies coverage gaps from git diff, and writes pattern-matched tests for every changed file. No configuration required.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag" style="border-color: var(--rule); color: var(--ink-3);">no env vars</span>
+      </div>
+    </div>
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">05</div>
+      <div>
+        <div class="p-cmd">/trellis bulk-pr-review</div>
+        <div class="p-title">Parallel PR Review</div>
+        <div class="p-desc">Maps PR dependency layers, dispatches parallel review subagents per layer, and posts APPROVE / REQUEST CHANGES / BLOCKED-CI verdicts directly to GitHub. Every open PR reviewed in one pass.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag">GH_TOKEN</span>
+      </div>
+    </div>
+
+    <div class="pipeline-item reveal">
+      <div class="p-num">06</div>
+      <div>
+        <div class="p-cmd">/trellis fix-pr-comments</div>
+        <div class="p-title">Automated Comment Resolution</div>
+        <div class="p-desc">Finds all open PRs with CHANGES_REQUESTED or unresolved threads, fixes every issue, pushes to the branch, and replies to each thread with the resolving commit SHA.</div>
+      </div>
+      <div class="p-env">
+        <span class="env-tag">GH_TOKEN</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── SCHEDULING ────────────────────────────── -->
+<section id="scheduling">
+  <div class="section-tag reveal">03 / Automation</div>
+  <div class="scheduling-layout">
+    <div class="scheduling-body reveal">
+      <h2 class="scheduling-heading">Set it up once.<br>The loop runs itself.</h2>
+      <p>Because every sub-command is stateless and idempotent, the entire pipeline is safe to run on a cron schedule. No state files. No locks. No cleanup. Running a command twice never creates duplicate work.</p>
+      <p>Trellis tracks its own progress through Linear ticket states and GitHub PR metadata. Research agents skip tickets they've already commented on. <code style="font-family:'DM Mono',monospace;font-size:0.875em">dev-backlog</code> only picks up unstarted tickets. <code style="font-family:'DM Mono',monospace;font-size:0.875em">fix-pr-comments</code> only touches PRs with open feedback.</p>
+      <p>Wire the pipeline into cron once. Implementation runs every weeknight, PR review every afternoon, comment fixes before standup — without a single manual trigger.</p>
+    </div>
+    <div class="reveal d1">
+      <div class="cron-block">
+        <div class="cron-label">crontab</div>
+        <div class="cron-row">
+          <span class="cron-sched">0 8 * * 1-5</span>
+          <span class="cron-cmd">/trellis research-backlog</span>
+        </div>
+        <div class="cron-row">
+          <span class="cron-sched">0 21 * * 1-5</span>
+          <span class="cron-cmd">/trellis dev-backlog</span>
+        </div>
+        <div class="cron-row">
+          <span class="cron-sched">0 14 * * 1-5</span>
+          <span class="cron-cmd">/trellis bulk-pr-review</span>
+        </div>
+        <div class="cron-row">
+          <span class="cron-sched">0 9 * * 1-5</span>
+          <span class="cron-cmd">/trellis fix-pr-comments</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHY ──────────────────────────────────── -->
+<section id="why">
+  <div class="section-tag reveal">04 / Differentiators</div>
+  <h2 class="why-heading reveal">Built for production scale. Not proof of concept.</h2>
+  <div class="why-grid">
+    <div class="why-cell reveal">
+      <div class="why-cell-num">01</div>
+      <h3>Bulk, not one-shot</h3>
+      <p>Most agent tooling helps you write one feature at a time. Trellis processes your entire backlog, PR queue, and test coverage gaps in a single automated pass — every night if you want.</p>
+    </div>
+    <div class="why-cell reveal d1">
+      <div class="why-cell-num">02</div>
+      <h3>Direct API, not MCP</h3>
+      <p>Trellis calls Linear and GitHub directly via curl rather than through MCP servers. In bulk runs with 5–25 parallel subagents, MCP overhead compounds. Direct calls return exactly what's needed — nothing more, leaving more room for actual work.</p>
+    </div>
+    <div class="why-cell reveal">
+      <div class="why-cell-num">03</div>
+      <h3>Harness-agnostic</h3>
+      <p>Skills are plain markdown files — no build step, no dependencies. Any agent harness that can load and execute skills can run Trellis. Claude Code, Cursor, Gemini CLI, and Codex all work out of the box.</p>
+    </div>
+    <div class="why-cell reveal d1">
+      <div class="why-cell-num">04</div>
+      <h3>Composable by design</h3>
+      <p>Run the full SDLC loop end-to-end, or drop a single sub-command in wherever you need it. Each stage is independently useful and can run without the others. The pipeline is additive, not monolithic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── COMPATIBILITY ─────────────────────────── -->
+<section id="compatibility">
+  <div class="section-tag reveal">05 / Integrations</div>
+  <div class="compat-layout">
+    <div class="reveal">
+      <h2 class="compat-heading">Works where your agents already live.</h2>
+    </div>
+    <div>
+      <p class="compat-intro reveal">Trellis is harness-agnostic. Copy the skills folder into your agent's skills directory and the commands are available immediately. No build step, no configuration beyond environment variables.</p>
+
+      <div class="harness-list reveal d1">
+        <div class="harness-row">
+          <div class="harness-dot"></div>
+          <span class="harness-name">Claude Code</span>
+          <span class="harness-path">~/.claude/skills/</span>
+        </div>
+        <div class="harness-row">
+          <div class="harness-dot"></div>
+          <span class="harness-name">Cursor</span>
+          <span class="harness-path">.cursor/skills/</span>
+        </div>
+        <div class="harness-row">
+          <div class="harness-dot"></div>
+          <span class="harness-name">Gemini CLI</span>
+          <span class="harness-path">~/.gemini/skills/</span>
+        </div>
+        <div class="harness-row">
+          <div class="harness-dot"></div>
+          <span class="harness-name">OpenAI Codex CLI</span>
+          <span class="harness-path">~/.codex/skills/</span>
+        </div>
+        <div class="harness-row">
+          <div class="harness-dot"></div>
+          <span class="harness-name">Any harness with skill support</span>
+          <span class="harness-path">check your docs</span>
+        </div>
+      </div>
+
+      <div class="sp-callout reveal d2">
+        <div class="sp-eyebrow">Pairs with</div>
+        <h3>Superpowers</h3>
+        <p>Trellis handles <em>what</em> gets done at scale. Superpowers handles <em>how</em> the agent codes — TDD, systematic debugging, structured brainstorming, plan-before-code, and rigorous code review. Run Superpowers so the agent codes correctly. Run Trellis so it does that at production scale, on a schedule.</p>
+        <a href="https://github.com/obra/superpowers" class="sp-link">View Superpowers</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INSTALL ───────────────────────────────── -->
+<section id="install">
+  <div class="section-tag reveal">06 / Installation</div>
+  <div class="install-layout">
+    <div>
+      <h2 class="install-heading reveal">One copy.<br>Zero build steps.</h2>
+      <div class="install-steps">
+        <div class="step reveal d1">
+          <div class="step-num">1</div>
+          <div>
+            <h4>Clone or copy</h4>
+            <p>Clone the repository, or copy the <code style="font-family:'DM Mono',monospace;font-size:0.875em">skills/trellis</code> folder directly into your agent's skills directory.</p>
+          </div>
+        </div>
+        <div class="step reveal d2">
+          <div class="step-num">2</div>
+          <div>
+            <h4>Set environment variables</h4>
+            <p>Add <code style="font-family:'DM Mono',monospace;font-size:0.875em">LINEAR_API_KEY</code> and <code style="font-family:'DM Mono',monospace;font-size:0.875em">GH_TOKEN</code> to your environment. The sub-command table documents which commands require which.</p>
+          </div>
+        </div>
+        <div class="step reveal d3">
+          <div class="step-num">3</div>
+          <div>
+            <h4>Run your first command</h4>
+            <p>Invoke <code style="font-family:'DM Mono',monospace;font-size:0.875em">/trellis</code> with no sub-command to see the full list, or jump straight to <code style="font-family:'DM Mono',monospace;font-size:0.875em">/trellis vision-roadmap</code> to generate your first roadmap.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="code-panels">
+      <div class="code-panel reveal d1">
+        <div class="code-panel-label">Claude Code</div>
+        <code>
+          <span class="sh-prompt">$ </span><span class="sh-cmd">git clone https://github.com/drewdoebereiner/trellis.git</span><br>
+          <span class="sh-prompt">$ </span><span class="sh-cmd">cp -r trellis/skills/trellis ~/.claude/skills/</span>
+        </code>
+      </div>
+      <div class="code-panel reveal d2">
+        <div class="code-panel-label">Usage</div>
+        <code>
+          <span class="sh-cmd">/trellis vision-roadmap</span><br>
+          <span class="sh-cmd">/trellis research-backlog</span><br>
+          <span class="sh-cmd">/trellis dev-backlog</span><br>
+          <span class="sh-cmd">/trellis write-unit-tests</span><br>
+          <span class="sh-cmd">/trellis bulk-pr-review</span><br>
+          <span class="sh-cmd">/trellis fix-pr-comments</span>
+        </code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────── -->
+<footer>
+  <a href="/" class="footer-logo">
+    <svg width="15" height="15" viewBox="0 0 18 18" fill="none" style="color:var(--moss)">
+      <line x1="3"  y1="0" x2="3"  y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="9"  y1="0" x2="9"  y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="15" y1="0" x2="15" y2="18" stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="3"  x2="18" y2="3"  stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="9"  x2="18" y2="9"  stroke="currentColor" stroke-width="1.1"/>
+      <line x1="0" y1="15" x2="18" y2="15" stroke="currentColor" stroke-width="1.1"/>
+    </svg>
+    Trellis
+  </a>
+  <ul class="footer-links">
+    <li><a href="https://github.com/drewdoebereiner/trellis">GitHub</a></li>
+    <li><a href="https://github.com/obra/superpowers">Superpowers</a></li>
+    <li><a href="https://github.com/drewdoebereiner/trellis/blob/main/LICENSE">MIT License</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 Trellis</span>
+</footer>
+
+<script>
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+  }, { passive: true });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
