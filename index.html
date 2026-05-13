@@ -774,12 +774,109 @@
     .d3 { transition-delay: 0.3s; }
     .d4 { transition-delay: 0.4s; }
 
+    /* ── MOBILE NAV BURGER ───────────────────────── */
+    .nav-burger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      margin-left: 0.5rem;
+    }
+
+    .nav-burger span {
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: oklch(100% 0 0 / 0.9);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.2s,
+                  background 0.4s;
+    }
+
+    nav.scrolled .nav-burger span,
+    nav.page-nav .nav-burger span { background: var(--ink); }
+
+    .nav-burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .nav-burger.open span:nth-child(2) { opacity: 0; }
+    .nav-burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ── MOBILE OVERLAY ──────────────────────────── */
+    .nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 98;
+      background: var(--cream);
+      flex-direction: column;
+      padding: 90px clamp(1.5rem, 8vw, 3rem) 3rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .nav-overlay.visible { display: flex; }
+    .nav-overlay.open    { opacity: 1; pointer-events: auto; }
+
+    .overlay-link {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.75rem, 11vw, 4.5rem);
+      font-weight: 300;
+      color: var(--ink);
+      text-decoration: none;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--rule);
+      cursor: pointer;
+      transition: color 0.2s;
+      display: block;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: color 0.2s,
+                  opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .overlay-link:first-child { border-top: 1px solid var(--rule); }
+    .overlay-link.active { color: var(--moss); }
+
+    .nav-overlay.open .overlay-link:nth-child(1) { opacity: 1; transform: none; transition-delay: 0.05s; }
+    .nav-overlay.open .overlay-link:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+    .nav-overlay.open .overlay-link:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.15s; }
+
+    .overlay-gh {
+      margin-top: 2.5rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid var(--moss);
+      color: var(--moss);
+      display: inline-block;
+      align-self: flex-start;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s,
+                  transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s,
+                  background 0.25s,
+                  color 0.25s;
+    }
+
+    .nav-overlay.open .overlay-gh { opacity: 1; transform: none; }
+    .overlay-gh:hover { background: var(--moss); color: var(--cream); }
+
     /* ── RESPONSIVE ──────────────────────────────── */
     @media (max-width: 860px) {
       .manifesto-pillars { grid-template-columns: 1fr; }
       .pillar { border-right: none; border-bottom: 1px solid var(--rule); padding: 2rem 0; }
       .pillar:nth-child(2) { padding-left: 0; }
-      .pillar:last-child { padding-left: 0; }
+      .pillar:last-child   { padding-left: 0; }
 
       .framework-layout,
       .pipeline-header,
@@ -787,19 +884,79 @@
       .compat-layout,
       .install-layout { grid-template-columns: 1fr; }
 
-      .framework-facts { grid-template-columns: repeat(3, 1fr); }
-
       .pipeline-item { grid-template-columns: 2.75rem 1fr; }
       .p-env { grid-column: 2; flex-direction: row; align-items: flex-start; flex-wrap: wrap; }
 
       .why-grid { grid-template-columns: 1fr; }
 
-      .nav-tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+      /* Code overflow */
+      .code-panel { overflow-x: auto; padding: 1.5rem 1.75rem; }
+      .code-panel code { white-space: pre; min-width: max-content; }
+
+      /* Cron overflow */
+      .cron-block { overflow-x: auto; padding: 1.75rem 2rem; }
+      .cron-row   { min-width: max-content; }
     }
 
-    @media (max-width: 560px) {
-      .framework-facts { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) {
+      /* Switch to burger */
+      .nav-tabs, .nav-gh { display: none; }
+      .nav-burger        { display: flex; }
+      .nav-overlay       { display: flex; }
+
+      /* Tighter section padding */
+      #framework, #install, #why,
+      #pipeline, #scheduling, #compatibility {
+        padding-left:  clamp(1.25rem, 5vw, 2.5rem);
+        padding-right: clamp(1.25rem, 5vw, 2.5rem);
+      }
+
+      #manifesto { padding-left: clamp(1.25rem, 5vw, 2.5rem); padding-right: clamp(1.25rem, 5vw, 2.5rem); }
+
+      .framework-facts { grid-template-columns: repeat(3, 1fr); gap: 1.25rem 1rem; }
+      .fact-value      { font-size: 1.75rem; }
+      .fact-label      { font-size: 0.75rem; }
+
+      /* Install steps */
+      .install-heading { margin-bottom: 2rem; }
+
+      /* Why grid cells */
+      .why-cell { padding: 1.75rem; }
+
+      /* Pipeline */
+      .pipeline-item { gap: 1.25rem 1.5rem; }
+
+      /* Harness path wraps */
+      .harness-path { font-size: 0.7rem; }
+
+      /* Footer */
+      footer { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
       .footer-links { display: none; }
+
+      /* Cron stack */
+      .cron-row { grid-template-columns: 1fr; gap: 0.2rem; padding-bottom: 0.75rem; }
+      .cron-row:last-child { padding-bottom: 0; }
+
+      /* Docs page pipeline section inline padding */
+      #pipeline > div, #scheduling > div, #compatibility > div, #why > div {
+        padding-left:  clamp(1.25rem, 5vw, 2.5rem);
+        padding-right: clamp(1.25rem, 5vw, 2.5rem);
+      }
+
+      #manifesto > div {
+        padding-left:  clamp(1.25rem, 5vw, 2.5rem);
+        padding-right: clamp(1.25rem, 5vw, 2.5rem);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .framework-facts { grid-template-columns: 1fr 1fr 1fr; }
+      .fact-value      { font-size: 1.5rem; }
+
+      .nav-wordmark { font-size: 0.95rem; }
+
+      .pipeline-item { grid-template-columns: 2.25rem 1fr; gap: 1rem 1.25rem; }
+      .p-cmd { font-size: 0.75rem; }
     }
   </style>
 </head>
@@ -826,8 +983,19 @@
       <span class="tab-indicator hidden" id="tabIndicator"></span>
     </div>
     <a href="https://github.com/drewdoebereiner/trellis" class="nav-gh">GitHub</a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- ── MOBILE OVERLAY ───────────────────────── -->
+<div class="nav-overlay" id="navOverlay">
+  <a class="overlay-link" data-page="home">Home</a>
+  <a class="overlay-link" data-page="about">About</a>
+  <a class="overlay-link" data-page="docs">Documentation</a>
+  <a href="https://github.com/drewdoebereiner/trellis" class="overlay-gh">GitHub</a>
+</div>
 
 <!-- ══════════════════════════════════════════ -->
 <!-- HOME PAGE                                  -->
@@ -1336,8 +1504,6 @@
   document.querySelectorAll('#page-home .reveal').forEach(el => observer.observe(el));
 
   /* ── INDICATOR ON HOVER ──────────────────── */
-  const tabsContainer = document.getElementById('navTabs');
-
   tabs.forEach(tab => {
     tab.addEventListener('mouseenter', () => {
       positionIndicator(tab);
@@ -1351,6 +1517,44 @@
       } else {
         indicator.classList.add('hidden');
       }
+    });
+  });
+
+  /* ── MOBILE BURGER ───────────────────────── */
+  const burger  = document.getElementById('navBurger');
+  const overlay = document.getElementById('navOverlay');
+  const overlayLinks = overlay.querySelectorAll('.overlay-link');
+  let overlayOpen = false;
+
+  function updateOverlayActive() {
+    overlayLinks.forEach(l => l.classList.toggle('active', l.dataset.page === currentPage));
+  }
+
+  function openOverlay() {
+    overlayOpen = true;
+    burger.classList.add('open');
+    overlay.classList.add('visible');
+    requestAnimationFrame(() => overlay.classList.add('open'));
+    document.body.style.overflow = 'hidden';
+    updateOverlayActive();
+  }
+
+  function closeOverlay() {
+    overlayOpen = false;
+    burger.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    overlay.addEventListener('transitionend', () => {
+      if (!overlayOpen) overlay.classList.remove('visible');
+    }, { once: true });
+  }
+
+  burger.addEventListener('click', () => overlayOpen ? closeOverlay() : openOverlay());
+
+  overlayLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      switchPage(link.dataset.page);
+      closeOverlay();
     });
   });
 </script>
