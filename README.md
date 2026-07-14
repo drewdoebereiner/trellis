@@ -99,7 +99,7 @@ Four sub-commands are built to run unattended: `research-backlog`, `dev-backlog`
 
 Most agent tooling helps you write one feature at a time. Trellis is built for production scale: it processes your entire backlog, PR queue, and test coverage gaps in a single automated pass.
 
-Pair it with Superpowers — which encodes best practices into how the agent codes — and you get an agent that not only ships fast, but ships correctly. Research before implementation, tests before review, comments resolved before merge. The full SDLC runs on a schedule with no manual handoffs.
+Pair it with Superpowers — which encodes best practices into how the agent codes — and you get an agent that not only ships fast, but ships correctly. Research before implementation, tests before review, comments resolved before merge. Once you set the direction with `vision-roadmap`, the rest of the SDLC runs on a schedule with no manual handoffs.
 
 ---
 
@@ -113,7 +113,7 @@ One skill, six sub-commands. Invoke as `/trellis <sub-command>`.
 
 | Sub-command | What it does |
 |---|---|
-| `vision-roadmap` | Read the repo, ask 7 clarifying questions, produce a strategic roadmap doc, create Linear backlog tickets via GraphQL |
+| `vision-roadmap` | Read the repo, ask 7 clarifying questions, produce a strategic roadmap doc, create Linear backlog tickets via GraphQL *(interactive only — not scheduled)* |
 | `research-backlog` | Fetch all backlog tickets, dispatch parallel research agents, post structured findings as comments |
 | `dev-backlog` | Pull Todo tickets by priority (default 10, or specify a count), implement each on its own branch, open PRs targeting dev, move tickets to In Review |
 | `write-unit-tests` | Discover test framework from codebase, identify coverage gaps from git diff, write pattern-matched tests |
