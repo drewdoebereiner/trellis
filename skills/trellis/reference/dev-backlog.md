@@ -13,15 +13,26 @@ For each Todo ticket in your Linear team, implement the code changes, open a PR 
 
 ---
 
+## Cron behavior
+
+This sub-command is cron-safe. Before touching any ticket, run the startup preamble in [`cron-contract.md`](./cron-contract.md): resolve non-interactive mode, bootstrap env, open the run log, and acquire the `dev-backlog` lock (this is the longest-running command — the lock is what stops an overrun from colliding with the next fire). Required env vars: `LINEAR_API_KEY`, `LINEAR_TEAM_NAME`, `GH_TOKEN`.
+
+Key non-interactive rules for this skill:
+- Missing required env var, dirty tree, or failed repo sync → **fail fast** (exit non-zero).
+- An ambiguous ticket whose scope can't be resolved from docs → **skip and log**, never stop and ask (see Step 5).
+- Idempotency: only `unstarted` tickets are picked, and each is moved to In Review once its PR is open — so a re-run naturally never re-implements a ticket. Additionally skip any ticket whose identifier already appears in an open PR.
+
+---
+
 ## Configuration
 
 Set these before running:
 
 ```bash
-# Absolute path to the repo on this machine
+# Absolute path to the repo on this machine (defaults to the git repo root)
 export PROJECT_ROOT=/path/to/your/repo
 
-# Your Linear team name (used to look up the team ID)
+# Your Linear team name (used to look up the team ID) — REQUIRED for cron runs
 export LINEAR_TEAM_NAME="your-team-name"
 ```
 
@@ -45,7 +56,7 @@ fi
 echo $LINEAR_API_KEY
 ```
 
-If still empty, stop and ask the user. Do not proceed without a confirmed key.
+If still empty: in non-interactive mode, fail fast and exit non-zero (per the cron contract). Only when running interactively may you ask the user for the key.
 
 ---
 
@@ -188,7 +199,9 @@ ls "$PROJECT_ROOT/"
 
 Also check for a `tasks/lessons.md` file and read it -- it may contain patterns to avoid.
 
-Infer which files need changing before branching. If the ticket is ambiguous, stop and ask rather than guessing.
+Infer which files need changing before branching. If the ticket is ambiguous:
+- **Non-interactive:** skip it, record "skipped: scope unclear" in the run log, and move to the next ticket. Never guess at a spec a human was meant to clarify, and never block waiting for an answer.
+- **Interactive:** ask the user rather than guessing.
 
 ---
 
@@ -299,9 +312,9 @@ Check `success: true`. If false, log and continue -- do not halt the run.
 
 ---
 
-## Step 10: Report to User
+## Step 10: Report
 
-After all tickets are processed (or run is stopped), print a summary table:
+After all tickets are processed (or the run stops), write the summary to both the run log (`$RUN_LOG`) and stdout, ending with a `RESULT:` line per the cron contract (e.g. `RESULT: ok — 3 PRs opened, 1 skipped (scope unclear)`). A skipped ticket is not a failure — exit 0. Reserve non-zero for whole-run blockers (dirty tree, sync failure, missing key). Summary table:
 
 | Ticket | Title | Branch | PR | Status |
 |--------|-------|--------|----|--------|

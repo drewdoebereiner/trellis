@@ -13,6 +13,17 @@ For each backlog ticket in your Linear team, dispatch a parallel research subage
 
 ---
 
+## Cron behavior
+
+This sub-command is cron-safe. Before doing anything, run the startup preamble in [`cron-contract.md`](./cron-contract.md): resolve non-interactive mode, bootstrap env, open the run log, and acquire the `research-backlog` lock. Required env vars: `LINEAR_API_KEY`, `LINEAR_TEAM_NAME`.
+
+Key non-interactive rules for this skill:
+- Missing `LINEAR_API_KEY` or `LINEAR_TEAM_NAME` → **fail fast** (exit non-zero), never prompt.
+- A ticket that can't be researched (empty title and description) → **skip and log**, continue the batch.
+- Idempotency: skip any ticket that already carries a `<!-- trellis:research-backlog v1 -->` comment (see Step 2b).
+
+---
+
 ## Pre-flight: Confirm API Key
 
 Do this before anything else:
@@ -21,7 +32,7 @@ Do this before anything else:
 echo $LINEAR_API_KEY
 ```
 
-If empty, ask the user to provide it. Do not proceed without a confirmed key.
+Per the cron contract, resolve the key from the environment or `$PROJECT_ROOT/.env`. If it is still empty: in non-interactive mode, fail fast and exit non-zero; only when running interactively may you ask the user to provide it.
 
 ---
 
@@ -41,17 +52,7 @@ If you are about to call any `mcp__claude_ai_Linear__*` tool: stop. Use curl ins
 
 ## Step 1: Identify the Target Team
 
-List all teams and ask the user which one to target if `$LINEAR_TEAM_NAME` is not set:
-
-```bash
-curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "{ teams { nodes { id name } } }"}' \
-  | jq '.data.teams.nodes'
-```
-
-If `$LINEAR_TEAM_NAME` is set, filter automatically:
+`$LINEAR_TEAM_NAME` selects the team without a human in the loop. Filter for it:
 
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
@@ -62,6 +63,10 @@ curl -s -X POST https://api.linear.app/graphql \
 ```
 
 Save the `id` as `TEAM_ID`.
+
+If `$LINEAR_TEAM_NAME` is unset or matches no team:
+- **Non-interactive:** fail fast (exit non-zero) — a cron run cannot pick a team from a list. The one exception: if the workspace has exactly one team, use it.
+- **Interactive:** list all teams (`jq '.data.teams.nodes'`) and ask the user which to target.
 
 ---
 
@@ -91,6 +96,25 @@ curl -s -X POST https://api.linear.app/graphql \
 ```
 
 Then re-query filtering by the correct state IDs.
+
+---
+
+## Step 2b: Skip Already-Researched Tickets (idempotency)
+
+Trellis marks every research comment with `<!-- trellis:research-backlog v1 -->` on its first line. Before dispatching agents, fetch each ticket's comments and drop any ticket that already has one — this is what makes re-runs (and cron) safe.
+
+```bash
+# Returns the marker if this ticket was already researched by Trellis
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query IssueComments($id: String!) { issue(id: $id) { comments { nodes { body } } } }",
+    "variables": { "id": "ISSUE_ID" }
+  }' | jq -r '.data.issue.comments.nodes[].body' | grep -q "trellis:research-backlog" && echo "ALREADY_RESEARCHED"
+```
+
+Log skipped tickets as "already researched" in the run log and exclude them from Step 3. Only research tickets without the marker.
 
 ---
 
@@ -149,7 +173,14 @@ Return only the markdown. No preamble, no explanation.
 
 ## Step 4: Post Comment to Each Ticket
 
-After each research agent returns its markdown, post it as a comment on the ticket.
+After each research agent returns its markdown, post it as a comment on the ticket. **Prepend the idempotency marker as the very first line of the body** so re-runs and Step 2b can detect it:
+
+```
+<!-- trellis:research-backlog v1 -->
+
+## Research Notes
+...
+```
 
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
@@ -186,9 +217,11 @@ jq -n --arg body "$BODY" --arg issueId "ISSUE_ID" \
 
 ---
 
-## Step 5: Report to User
+## Step 5: Report
 
-After all tickets are processed, print a summary table:
+After all tickets are processed, write the summary to both the run log (`$RUN_LOG`) and stdout, then end with a `RESULT:` line per the cron contract (e.g. `RESULT: ok — 4 researched, 2 skipped (already done), 1 skipped (no content)`). Exit 0 even if some tickets were skipped; only env/auth/team failures exit non-zero.
+
+Summary table:
 
 | Ticket | Title | Comment Posted | Notes |
 |--------|-------|---------------|-------|

@@ -9,6 +9,8 @@ description: Use when writing unit tests for any feature or change - discovers t
 
 Discover context from the codebase first, then write tests that match existing patterns. Never assume the stack - read it.
 
+> **Not a standalone cron job.** This is a sub-skill invoked *by* `dev-backlog` (Step 7) to cover the code it just wrote — it has no Linear/GitHub side effects and no run of its own to schedule. It is already fully non-interactive: it reads the diff and writes tests without asking anything. When `dev-backlog` runs on cron, this runs inside it.
+
 ## Step 1: Discover What Needs Testing
 
 Run these before writing a single test:

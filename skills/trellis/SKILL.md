@@ -30,3 +30,9 @@ When invoked as `/trellis <sub-command>`, load and execute the matching referenc
 - `bulk-pr-review` -> `reference/bulk-pr-review.md`
 
 If invoked as `/trellis` with no sub-command, list the table above and ask the user which sub-command to run.
+
+## Running unattended (cron / CI / scheduled agent)
+
+`research-backlog`, `dev-backlog`, `bulk-pr-review`, and `fix-pr-comments` are cron-safe: they never block on a human, log every run durably, hold a concurrency lock, and skip work they have already done. Each one begins with the shared startup contract in `reference/cron-contract.md` — read it before running any of them unattended.
+
+`vision-roadmap` is **interactive only** (it asks the human where the product should go) and fails fast in non-interactive mode. `write-unit-tests` is a sub-skill invoked by `dev-backlog`, not a standalone scheduled job.

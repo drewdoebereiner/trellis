@@ -11,6 +11,17 @@ For each open PR that has unresolved review comments or a `CHANGES_REQUESTED` ve
 
 ---
 
+## Cron behavior
+
+This sub-command is cron-safe. Before Step 1, run the startup preamble in [`cron-contract.md`](./cron-contract.md): resolve non-interactive mode, bootstrap env, open the run log, and acquire the `fix-pr-comments` lock. Required env var: `GH_TOKEN`.
+
+Key non-interactive rules for this skill:
+- Missing `GH_TOKEN` or dirty working tree → **fail fast** (exit non-zero).
+- A branch that can't fast-forward, a missing migration, or an ambiguous non-CodeRabbit bot comment → **skip and log**, continue to the next PR.
+- Idempotency: a thread already resolved, or already replied to with `<!-- trellis:fix-pr-comments v1 -->` at the current head SHA, is skipped — re-runs never re-fix or double-reply.
+
+---
+
 ## CRITICAL: gh CLI only, never GitHub MCP
 
 All GitHub operations use `gh` CLI with `$GH_TOKEN`. Never use GitHub MCP tools.
@@ -165,12 +176,14 @@ After pushing, reply to each comment you fixed so reviewers know which commit ad
 ```bash
 COMMIT=$(git rev-parse --short HEAD)
 
-# Reply to an inline comment thread
+# Reply to an inline comment thread — first line is the idempotency marker
 gh api repos/:owner/:repo/pulls/$N/comments \
   --method POST \
-  --field body="Fixed in $COMMIT." \
+  --field body="$(printf '<!-- trellis:fix-pr-comments v1 -->\nFixed in %s.' "$COMMIT")" \
   --field in_reply_to=COMMENT_ID
 ```
+
+Before replying to a thread, skip it if it already contains a `trellis:fix-pr-comments` reply posted at the current head SHA — that means a previous run already handled it. Resolved threads are skipped outright (Step 3).
 
 For review-level feedback (not inline), post a general PR comment:
 
@@ -213,7 +226,7 @@ Resolve each unresolved thread after replying.
 
 ## Step 8: Report
 
-After all PRs are processed:
+After all PRs are processed, write this summary to both the run log (`$RUN_LOG`) and stdout, ending with a `RESULT:` line per the cron contract (e.g. `RESULT: ok — 2 PRs fixed, 1 skipped (diverged branch)`). A skipped PR is not a failure — exit 0. Reserve non-zero for whole-run blockers (dirty tree, missing `GH_TOKEN`). Summary:
 
 | PR | Branch | Issues Fixed | Issues Skipped | Commit | Status |
 |----|--------|-------------|----------------|--------|--------|

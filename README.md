@@ -67,14 +67,20 @@ flowchart TD
 
 ## Scheduling
 
-Each sub-command is stateless and idempotent — running one twice produces no duplicate work. That makes the whole pipeline safe to wire into cron.
+Four sub-commands are built to run unattended: `research-backlog`, `dev-backlog`, `bulk-pr-review`, and `fix-pr-comments`. Each follows a shared **cron contract** ([`skills/trellis/reference/cron-contract.md`](skills/trellis/reference/cron-contract.md)) so a scheduled run is safe:
+
+- **Never blocks on a human.** Missing prerequisites fail fast; unhandleable work items are skipped and logged. Nothing waits for input.
+- **Idempotent.** Every artifact Trellis creates carries a marker (`<!-- trellis:<command> v1 -->`), and every command checks for it — re-runs never duplicate work.
+- **Durable run logs.** Each run writes a summary and a `RESULT:` line to `.trellis/runs/`, so you can see what a run did after the fact.
+- **Concurrency-locked.** A run that overruns its schedule holds a lock in `.trellis/locks/`; the next fire exits cleanly instead of colliding.
+- **Exit codes.** `0` for a completed pass (including all-skipped); non-zero only for whole-run blockers (missing key, dirty tree, sync failure).
 
 ```
 # Enrich new backlog tickets every morning
 0 8 * * 1-5   /trellis research-backlog
 
 # Implement up to 5 tickets every weeknight
-0 21 * * 1-5  /trellis dev-backlog
+0 21 * * 1-5  /trellis dev-backlog 5
 
 # Review all open PRs each afternoon
 0 14 * * 1-5  /trellis bulk-pr-review
@@ -83,9 +89,9 @@ Each sub-command is stateless and idempotent — running one twice produces no d
 0 9 * * 1-5   /trellis fix-pr-comments
 ```
 
-`research-backlog` skips tickets it has already commented on. `dev-backlog` only picks up unstarted tickets. `fix-pr-comments` only touches PRs with open feedback.
+`research-backlog` skips tickets it has already commented on. `dev-backlog` only picks up unstarted tickets and skips any already covered by an open PR. `bulk-pr-review` skips PRs it already reviewed at the current head. `fix-pr-comments` only touches PRs with open, unaddressed feedback.
 
-Set it up once and the loop runs on its own.
+`vision-roadmap` is **not** on this list — it asks the human where the product should go, so it stays interactive. Run it manually; the scheduled loop then picks up the tickets it creates. Set the loop up once and it runs on its own.
 
 ---
 
@@ -196,16 +202,18 @@ MCP servers are also not reliably available in remote or scheduled environments.
 
 ## Requirements
 
-Environment variables required per sub-command:
+Environment variables required per sub-command. `LINEAR_TEAM_NAME` is required for unattended runs (there is no human to pick a team from a list); interactive runs can select one instead.
 
 | Sub-command | Requires |
 |---|---|
-| `vision-roadmap` | `LINEAR_API_KEY` |
-| `research-backlog` | `LINEAR_API_KEY` |
-| `dev-backlog` | `LINEAR_API_KEY`, `GH_TOKEN` |
-| `write-unit-tests` | none |
+| `vision-roadmap` | `LINEAR_API_KEY` (interactive only) |
+| `research-backlog` | `LINEAR_API_KEY`, `LINEAR_TEAM_NAME` |
+| `dev-backlog` | `LINEAR_API_KEY`, `LINEAR_TEAM_NAME`, `GH_TOKEN` |
+| `write-unit-tests` | none (sub-skill of `dev-backlog`) |
 | `fix-pr-comments` | `GH_TOKEN` |
 | `bulk-pr-review` | `GH_TOKEN` |
+
+Optional overrides honored by all cron-safe sub-commands (see the cron contract for defaults): `PROJECT_ROOT`, `TRELLIS_NONINTERACTIVE`, `TRELLIS_HOME`, `TRELLIS_LOCK_TTL`.
 
 ---
 

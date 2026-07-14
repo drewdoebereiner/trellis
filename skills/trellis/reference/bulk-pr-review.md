@@ -9,6 +9,16 @@ description: Use when reviewing multiple open PRs on a GitHub repo in bulk — e
 
 Review all open PRs sequentially by dependency layer, using parallel subagents within each layer. Changes in one PR directly affect others — build the conflict map first, then review.
 
+## Cron behavior
+
+This sub-command is cron-safe. Before Phase 1, run the startup preamble in [`cron-contract.md`](./cron-contract.md): resolve non-interactive mode, bootstrap env, open the run log, and acquire the `bulk-pr-review` lock. Required env var: `GH_TOKEN`.
+
+Key non-interactive rules for this skill:
+- Missing `GH_TOKEN` → **fail fast** (exit non-zero).
+- This skill is already decisive by design ("make a decision, do not ask") — that is exactly the cron requirement. Never defer a verdict to the user.
+- Idempotency: skip any PR that already has a Trellis review recording the PR's current head SHA (see Step 1). Re-review only when the head has moved since the last Trellis review.
+- A single PR that errors on post → **skip and log**, continue the batch.
+
 ## CRITICAL: gh CLI only, never GitHub MCP
 
 All GitHub operations use `gh` CLI with `$GH_TOKEN`. Never use GitHub MCP tools.
@@ -64,11 +74,21 @@ digraph bulk_pr_review {
 ### Step 1 — Fetch everything
 
 ```bash
-gh pr list --repo owner/repo --state open --json number,title,headRefName,baseRefName,createdAt --limit 100
+gh pr list --repo owner/repo --state open --json number,title,headRefName,baseRefName,createdAt,headRefOid --limit 100
 gh pr list --repo owner/repo --state open --json number,statusCheckRollup
 ```
 
 CI failing? That PR is `BLOCKED-CI` — do not spend review time on it.
+
+**Idempotency (skip already-reviewed PRs):** for each PR, check whether Trellis already reviewed the current head. Trellis stamps every review body with `<!-- trellis:bulk-pr-review v1 head=<sha> -->`. If a review with the current `headRefOid` already exists, skip the PR — it has not changed since the last pass.
+
+```bash
+N=PR_NUMBER; HEAD_SHA=CURRENT_HEAD_OID
+gh api repos/:owner/:repo/pulls/$N/reviews --jq '.[].body' \
+  | grep -q "trellis:bulk-pr-review v1 head=$HEAD_SHA" && echo "ALREADY_REVIEWED_AT_HEAD"
+```
+
+Log skipped PRs as "already reviewed at current head" and exclude them from the review phase.
 
 ### Step 2 — Build dependency layers
 
@@ -145,9 +165,11 @@ After all verdicts are collected, post each one to its PR. Use the mapping below
 | `BLOCKED-CI` | `gh pr comment <number> --body "..."` (comment only -- no formal review until CI is green) |
 | `CLOSE` | `gh pr comment <number> --body "..."` then `gh pr close <number>` |
 
-**Body format for each post:**
+**Body format for each post** — the first line is the idempotency marker carrying the reviewed head SHA (see Step 1); include it verbatim so re-runs can detect it:
 
 ```
+<!-- trellis:bulk-pr-review v1 head=HEAD_SHA -->
+
 ## Review
 
 **Verdict:** APPROVE / REQUEST CHANGES / etc.
@@ -172,7 +194,7 @@ If a post fails (non-zero exit), log the error and continue -- do not halt the r
 
 ## Final Output
 
-After all layers are posted, emit a local summary:
+After all layers are posted, write this summary to both the run log (`$RUN_LOG`) and stdout, ending with a `RESULT:` line per the cron contract (e.g. `RESULT: ok — 12 reviewed, 3 skipped (unchanged head), 2 BLOCKED-CI`). Exit 0 for a completed pass; reserve non-zero for whole-run blockers (missing `GH_TOKEN`, auth failure). Local summary:
 
 ```
 ## Bulk PR Review -- <repo> -- <date>

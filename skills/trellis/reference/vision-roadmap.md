@@ -11,6 +11,10 @@ Act as a product visionary: read the repo and all documentation, ask clarifying 
 
 The goal is not bug hunting. The goal is imagining what this product needs to become.
 
+## Cron behavior: interactive only
+
+**This is the one Trellis sub-command that is NOT cron-safe.** Phase 2 asks the human where the product should go — a decision no scheduler can make. If you run this non-interactively (see [`cron-contract.md`](./cron-contract.md) for how to detect that), do not guess a vision: print a clear message that `vision-roadmap` requires a human and exit non-zero. Run it manually, then let the automated loop (`research-backlog` → `dev-backlog` → `bulk-pr-review` → `fix-pr-comments`) pick up the tickets it creates.
+
 ## Before You Begin: Check the Linear API Key
 
 **Do this before reading a single file.** You cannot create tickets without it, and discovering a missing key after building the entire roadmap wastes everyone's time.
