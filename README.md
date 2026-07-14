@@ -38,14 +38,15 @@ flowchart TD
     SP -->|foundation before building| VR
 
     subgraph TRELLIS["Trellis"]
-        VR["/trellis vision-roadmap\nRoadmap + Linear backlog tickets"]
+        VR["/trellis vision-roadmap\nRoadmap + Linear backlog tickets\n(interactive)"]
         RB["/trellis research-backlog\nEnrich tickets with research"]
         DB["/trellis dev-backlog\nImplement top 5 tickets, open PRs"]
-        WUT["/trellis write-unit-tests\nAdd coverage to changes"]
+        WUT["write-unit-tests\nsub-skill: covers each change"]
         BPR["/trellis bulk-pr-review\nReview all open PRs in parallel"]
         FPC["/trellis fix-pr-comments\nResolve feedback, push fixes"]
 
-        VR --> RB --> DB --> WUT --> BPR --> FPC
+        VR --> RB --> DB --> BPR --> FPC
+        DB -.->|invokes per ticket| WUT
     end
 
     subgraph LINEAR["Linear"]
@@ -142,17 +143,16 @@ Run `/trellis` with no sub-command to see the full list.
 The sub-commands form a full SDLC loop:
 
 ```
-vision-roadmap      # What should we build?
+vision-roadmap          # What should we build?  (interactive)
       |
-research-backlog    # What do we need to know before building?
+research-backlog        # What do we need to know before building?
       |
-dev-backlog         # Build it.
+dev-backlog             # Build it.
+      |-- write-unit-tests   # (sub-skill) cover each change as it's built
       |
-write-unit-tests    # Cover it.
+bulk-pr-review          # Review everything in flight.
       |
-bulk-pr-review      # Review everything in flight.
-      |
-fix-pr-comments     # Close the loop on review feedback.
+fix-pr-comments         # Close the loop on review feedback.
 ```
 
 ---
